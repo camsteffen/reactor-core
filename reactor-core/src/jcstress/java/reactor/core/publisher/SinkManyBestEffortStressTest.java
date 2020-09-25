@@ -21,6 +21,7 @@ import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
 import org.openjdk.jcstress.infra.results.I_Result;
+import org.openjdk.jcstress.infra.results.LI_Result;
 import org.reactivestreams.Subscription;
 
 import static org.openjdk.jcstress.annotations.Expect.*;
@@ -171,6 +172,45 @@ public abstract class SinkManyBestEffortStressTest {
 		@Arbiter
 		public void arbiter(I_Result r) {
 			r.r1 = sink.currentSubscriberCount();
+		}
+	}
+
+	@JCStressTest
+	@Outcome(id = {"FAIL_ZERO_SUBSCRIBER, 0"}, expect = ACCEPTABLE, desc = "Zero Subscriber because cancelled")
+	@Outcome(id = {"FAIL_OVERFLOW, 0"}, expect = ACCEPTABLE, desc = "Overflow because not cancelled nor requested")
+	@Outcome(id = {"OK, 1"}, expect = ACCEPTABLE, desc = "OK because requested before cancelled")
+	@State
+	public static class InnerTryEmitNextCancelVersusRequestStressTest {
+
+		final SinkManyBestEffort<Integer>             sink;
+		final StressSubscriber<Integer>               subscriber;
+		final SinkManyBestEffort.DirectInner<Integer> inner;
+
+		{
+			sink = SinkManyBestEffort.createBestEffort();
+			subscriber = new StressSubscriber<>(0);
+			sink.subscribe(subscriber);
+			inner = sink.subscribers[0];
+		}
+
+		@Actor
+		public void tryEmitNext(LI_Result r) {
+			r.r1 = sink.tryEmitNext(1);
+		}
+
+		@Actor
+		public void cancel() {
+			inner.set(true);
+		}
+
+		@Actor
+		public void request() {
+			inner.request(1);
+		}
+
+		@Arbiter
+		public void arbiter(LI_Result r) {
+			r.r2 = subscriber.onNextCalls.get();
 		}
 	}
 
