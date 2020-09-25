@@ -126,6 +126,8 @@ class SinkManyBestEffortTest {
 				subscription.cancel();
 			}
 		});
+
+		assertThat(sink.currentSubscriberCount()).as("immediately removes").isZero();
 	}
 
 	@Test
@@ -200,6 +202,25 @@ class SinkManyBestEffortTest {
 			sink.tryEmitComplete().orThrow();
 			sub1.assertValues(1, 2).assertComplete();
 			sub2.assertValues(2).assertComplete();
+		}
+
+		@Test
+		void allCancelledWhenTryingEmitInner() {
+			SinkManyBestEffort<Integer> sink = SinkManyBestEffort.createBestEffort();
+
+			AssertSubscriber<Integer> sub1 = AssertSubscriber.create();
+			AssertSubscriber<Integer> sub2 = AssertSubscriber.create(0);
+
+			sink.subscribe(sub1);
+			sink.subscribe(sub2);
+
+			sink.subscribers[0].set(true); //mark as cancelled
+			sink.subscribers[1].set(true);
+
+			assertThat(sink.tryEmitNext(1)).as("tryEmitNext(1)").isEqualTo(Emission.FAIL_ZERO_SUBSCRIBER);
+
+			sub1.assertNoValues().assertNotTerminated();
+			sub2.assertNoValues().assertNotTerminated();
 		}
 	}
 
