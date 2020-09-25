@@ -16,11 +16,6 @@
 
 package reactor.core.publisher;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscription;
@@ -34,7 +29,6 @@ import reactor.test.subscriber.AssertSubscriber;
 import reactor.util.context.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 class SinkManyBestEffortTest {
